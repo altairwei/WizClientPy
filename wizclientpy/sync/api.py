@@ -87,7 +87,7 @@ def makeUpUrlFromCommand(strCommand):
         version="",
         command=strCommand,
         ramdom=random.randrange(100000),
-        computer_name=None,
+        computer_name="",
         platform=WIZNOTE_API_ARG_PLATFORM,
         debug="false"
     )
