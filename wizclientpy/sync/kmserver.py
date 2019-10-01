@@ -4,6 +4,8 @@ WizNote API server.
 import requests
 from . import api
 
+WIZKM_WEBAPI_VERSION = 10
+
 
 def appendNormalParams(strUrl, token):
     if "?" not in strUrl:

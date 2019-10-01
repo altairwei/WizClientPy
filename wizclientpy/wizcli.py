@@ -1,9 +1,23 @@
 #!/usr/bin/env python
 
 import sys
+import os
+import platform
+from pathlib import Path
+
 import click
+from click_repl import repl
+from prompt_toolkit.history import FileHistory
+
 from sync.kmserver import WizKMAccountsServer
 
+
+if platform.system() == "Windows":
+    WIZNOTE_HOME = "WizNote"
+elif platform.system() == "Darwin":
+    WIZNOTE_HOME = ".wiznote"
+elif platform.system() == "Linux":
+    WIZNOTE_HOME = ".wiznote"
 
 @click.group()
 @click.pass_context
@@ -25,5 +39,13 @@ def login(user_id, password):
         name=info["displayName"]
     ))
 
+
+@wizcli.command()
+def shell():
+    prompt_kwargs = {'history': FileHistory(
+        str(Path.home().joinpath(WIZNOTE_HOME, ".wizcli_history")))}
+    repl(click.get_current_context(), prompt_kwargs=prompt_kwargs)
+
 if __name__ == '__main__':
+    # TODO: It's important to deal with Ctrl+C interrupt when writing database.
     wizcli()
