@@ -10,19 +10,14 @@ from click_repl import repl
 from prompt_toolkit.history import FileHistory
 
 from wizclientpy.sync.kmserver import WizKMAccountsServer
+from constants import WIZNOTE_HOME_DIR, WIZNOTE_HOME
 
 
-if platform.system() == "Windows":
-    WIZNOTE_HOME = "WizNote"
-elif platform.system() == "Darwin":
-    WIZNOTE_HOME = ".wiznote"
-elif platform.system() == "Linux":
-    WIZNOTE_HOME = ".wiznote"
-
-@click.group()
+@click.group(invoke_without_command=True)
 @click.pass_context
-def wizcli(context):
-    pass
+def wizcli(ctx):
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(shell)
 
 
 @wizcli.command()
@@ -42,8 +37,10 @@ def login(user_id, password):
 
 @wizcli.command()
 def shell():
-    prompt_kwargs = {'history': FileHistory(
-        str(Path.home().joinpath(WIZNOTE_HOME, ".wizcli_history")))}
+    prompt_kwargs = {
+        'history': FileHistory(
+            str(Path(WIZNOTE_HOME).joinpath(".wizcli_history"))),
+        'message': u"wizcli>>> "}
     repl(click.get_current_context(), prompt_kwargs=prompt_kwargs)
 
 if __name__ == '__main__':

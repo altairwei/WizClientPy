@@ -1,3 +1,8 @@
+from pathlib import Path
+from datetime import datetime
+
+from constants import WIZNOTE_HOME
+
 WIZKM_XMLRPC_ERROR_TRAFFIC_LIMIT = 304
 WIZKM_XMLRPC_ERROR_STORAGE_LIMIT = 305
 WIZKM_XMLRPC_ERROR_NOTE_COUNT_LIMIT = 3032
@@ -19,9 +24,34 @@ class WizException(Exception):
     """
     Generic WizNote exception.
     """
+    logfile = str(Path(WIZNOTE_HOME).joinpath("log", "wizcli.log"))
 
+    def exception_message_safe(self, exc):
+        try:
+            return str(exc)
+        except Exception:
+            return repr(exc)
+
+    def logerror(self):
+        """
+        Logging exception to file.
+        """
+        iso_now = datetime.now().replace(microsecond=0).isoformat()
+        msg = "{time}: [Error] {exc}\n".format(
+            time=iso_now,
+            exc=str(self)
+        )
+        with open(self.logfile, 'a') as log:
+            log.write(msg)
+
+
+class ServerXmlRpcError(WizException):
+    """
+    XML RPC error from Wiz server.
+
+    You can pass server object to server argument.
+    """
     def __init__(sefl, *args, **kwargs):
-        self.info = None
         self.server = kwargs.pop("server", None)
         super().__init__(*args, **kwargs)
 
@@ -30,46 +60,36 @@ class WizException(Exception):
             return " [Server: {}]".format(self.server.name)
         return ""
 
-    def exception_message_safe(exec):
-        try:
-            return str(exc)
-        except Exception:
-            return repr(exc)
-
     def __str__(self):
         msg = super().__str__()
-        if self.remote:
+        if self.server:
             return "{}.{}".format(
                 self.exception_message_safe(msg),
                 self.server_message())
 
 
-class XmlRpcError(WizException):
-    pass
-
-
-class InvalidUser(XmlRpcError):
+class InvalidUser(ServerXmlRpcError):
     """
     User not exists!
     """
     pass
 
 
-class InvalidPassword(XmlRpcError):
+class InvalidPassword(ServerXmlRpcError):
     """
     Password error!
     """
     pass
 
 
-class InvalidToken(XmlRpcError):
+class InvalidToken(ServerXmlRpcError):
     """
     User name or password is not correct!
     """
     pass
 
 
-class TooManyLogins(XmlRpcError):
+class TooManyLogins(ServerXmlRpcError):
     """
     Log in too many times in a short time, please try again later.
     """
