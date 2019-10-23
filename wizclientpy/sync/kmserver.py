@@ -2,7 +2,7 @@
 WizNote API server.
 """
 import requests
-from . import api
+from wizclientpy.sync import api
 
 WIZKM_WEBAPI_VERSION = 10
 
