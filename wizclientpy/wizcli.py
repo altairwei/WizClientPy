@@ -9,7 +9,7 @@ import click
 from click_repl import repl
 from prompt_toolkit.history import FileHistory
 
-from sync.kmserver import WizKMAccountsServer
+from wizclientpy.sync.kmserver import WizKMAccountsServer
 
 
 if platform.system() == "Windows":
