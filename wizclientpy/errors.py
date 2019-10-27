@@ -1,7 +1,7 @@
 from pathlib import Path
 from datetime import datetime
 
-from constants import WIZNOTE_HOME
+from wizclientpy.constants import WIZNOTE_HOME
 
 WIZKM_XMLRPC_ERROR_TRAFFIC_LIMIT = 304
 WIZKM_XMLRPC_ERROR_STORAGE_LIMIT = 305
@@ -51,7 +51,7 @@ class ServerXmlRpcError(WizException):
 
     You can pass server object to server argument.
     """
-    def __init__(sefl, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.server = kwargs.pop("server", None)
         super().__init__(*args, **kwargs)
 
@@ -96,9 +96,23 @@ class TooManyLogins(ServerXmlRpcError):
     pass
 
 
+class PrivateError(Exception):
+    """
+    This exception is raised when someone try to access private attributes.
+    """
+    pass
+
+
 EXCEPTION_CODE_MAPPING = {
-    InvalidToken: WIZKM_XMLRPC_ERROR_INVALID_TOKEN
+    InvalidToken: WIZKM_XMLRPC_ERROR_INVALID_TOKEN,
     InvalidUser: WIZKM_XMLRPC_ERROR_INVALID_USER,
     InvalidPassword: WIZKM_XMLRPC_ERROR_INVALID_PASSWORD,
     TooManyLogins: WIZKM_XMLRPC_ERROR_TOO_MANY_LOGINS,
 }
+
+CODE_EXCEPTION_MAPPING = dict([
+    (301, InvalidToken),
+    (31001, InvalidUser),
+    (31002, InvalidPassword),
+    (31004, TooManyLogins)
+])

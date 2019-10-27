@@ -9,6 +9,18 @@
 
 `WizKMAccountsServer` 类负责账号服务。
 
+### 登录流程
+
+`WizToken` 是单例模式，保存有用户名和密码。
+
+```cpp
+    // FIXME: move to WizService initialize
+    WizToken token;
+    ...
+    WizToken::setUserId(strUserId);
+    WizToken::setPasswd(strPassword);
+```
+
 ### 获取 Token
 
 在 WizQTClient 中，这一步由 `WizToken` 类负责实现：
@@ -194,4 +206,8 @@ bool WizKMAccountsServer::login(const QString& strUserName, const QString& strPa
     return m_bLogin;
 }
 ```
+
+
+
+### 保持登录状态
 

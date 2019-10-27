@@ -1,5 +1,5 @@
 """
-WizNote public APIs.
+This module is used as a tools to build WizNote APIs.
 """
 
 import json

@@ -10,3 +10,6 @@ elif platform.system() == "Darwin":
     WIZNOTE_HOME = str(Path(WIZNOTE_HOME_DIR).joinpath(".wiznote"))
 elif platform.system() == "Linux":
     WIZNOTE_HOME = str(Path(WIZNOTE_HOME_DIR).joinpath(".wiznote"))
+
+# use 10 minutes locally, server use 20 minutes
+TOKEN_TIMEOUT_INTERVAL = 600

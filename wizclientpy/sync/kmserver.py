@@ -2,7 +2,11 @@
 WizNote API server.
 """
 import requests
+
 from wizclientpy.sync import api
+from wizclientpy.sync.wizresp import WizResp
+from wizclientpy.sync.user_info import UserInfo
+from wizclientpy.utils.classtools import MetaSingleton
 
 WIZKM_WEBAPI_VERSION = 10
 
@@ -26,7 +30,7 @@ def appendNormalParams(strUrl, token):
     return strUrl
 
 
-class WizKMApiServerBase(object):
+class WizKMApiServerBase:
     def __init__(self, strServer):
         while strServer.endswith("/"):
             strServer = strServer[:-1]
@@ -36,7 +40,7 @@ class WizKMApiServerBase(object):
         return self.server
 
 
-class WizKMAccountsServer(WizKMApiServerBase):
+class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
     def __init__(self):
         self.isLogin = False
         self.autoLogout = False
@@ -47,15 +51,14 @@ class WizKMAccountsServer(WizKMApiServerBase):
             return True
         urlPath = "/as/user/login"
         url = self.buildUrl(urlPath)
-        # TODO: Request token
         res = requests.post(url, json={
             "userId": user_name,
             "password": password
         })
-        # TODO: handle error
-        res_json = res.json()
-        # TODO: Update user info
-        self.userInfo = res_json["result"]
+        res_json = WizResp(res).json()
+        # Update user information
+        self.userInfo = UserInfo(res_json["result"])
+        self.isLogin = True
         return True
 
     def getToken(self):
