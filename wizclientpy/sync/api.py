@@ -10,6 +10,8 @@ import locale
 import requests
 from urllib.parse import urlparse
 
+from wizclientpy.utils.urltools import appendSrc
+
 WIZNOTE_API_ENTRY = (
     "{server}"  # address of WizNote server
     "?p={product}"  # product, use wiz
@@ -53,11 +55,6 @@ WIZNOTE_API_SERVER = "https://api.wiz.cn/"
 
 _server = WIZNOTE_API_SERVER
 _url_cache = dict()
-
-
-def appendSrc(url):
-    url += "&srcHost=%s" % urlparse(url).netloc
-    return url
 
 
 def setEnterpriseServerIP(strIP):

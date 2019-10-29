@@ -30,3 +30,9 @@ class UserInfo:
         # epoch time in seconds
         self.tTokenExpried = time.time() + TOKEN_TIMEOUT_INTERVAL
 
+    def __str__(self):
+        out = "[User '%s']\n" % self.strDisplayName
+        for key in self.__dict__:
+            out += "  %s=%r\n" % (key, self.__dict__[key])
+        return out
+

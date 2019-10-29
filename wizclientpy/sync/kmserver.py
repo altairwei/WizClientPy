@@ -7,8 +7,7 @@ from wizclientpy.sync import api
 from wizclientpy.sync.wizresp import WizResp
 from wizclientpy.sync.user_info import UserInfo
 from wizclientpy.utils.classtools import MetaSingleton
-
-WIZKM_WEBAPI_VERSION = 10
+from wizclientpy.constants import WIZKM_WEBAPI_VERSION
 
 
 def appendNormalParams(strUrl, token):
@@ -34,6 +33,8 @@ class WizKMApiServerBase:
     def __init__(self, strServer):
         while strServer.endswith("/"):
             strServer = strServer[:-1]
+        if not strServer.startswith("http"):
+            strServer = "https://" + strServer
         self.server = strServer
 
     def getServer(self):
@@ -41,16 +42,15 @@ class WizKMApiServerBase:
 
 
 class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
-    def __init__(self):
+    def __init__(self, strServer=api.newAsServerUrl()):
         self.isLogin = False
         self.autoLogout = False
-        super().__init__(api.newAsServerUrl())
+        super().__init__(strServer)
 
     def login(self, user_name, password):
         if self.isLogin:
             return True
-        urlPath = "/as/user/login"
-        url = self.buildUrl(urlPath)
+        url = self.buildUrl("/as/user/login")
         res = requests.post(url, json={
             "userId": user_name,
             "password": password
@@ -61,10 +61,16 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
         self.isLogin = True
         return True
 
+    def keepAlive(self):
+        url = self.buildUrl("/as/user/keep")
+        res = requests.get(url)
+        res_json = WizResp(res).json()
+        pass
+
     def getToken(self):
         if not self.isLogin:
             return ""
-        return self.userInfo["strToken"]
+        return self.strToken
 
     def buildUrl(self, urlPath):
         if urlPath.startswith("http://") or urlPath.startswith("https://"):

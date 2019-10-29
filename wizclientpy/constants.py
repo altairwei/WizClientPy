@@ -13,3 +13,5 @@ elif platform.system() == "Linux":
 
 # use 10 minutes locally, server use 20 minutes
 TOKEN_TIMEOUT_INTERVAL = 600
+
+WIZKM_WEBAPI_VERSION = 10

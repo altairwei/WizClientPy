@@ -13,6 +13,7 @@ from wizclientpy.sync.kmserver import WizKMAccountsServer
 from wizclientpy.sync.token import WizToken
 from wizclientpy.constants import WIZNOTE_HOME_DIR, WIZNOTE_HOME
 from wizclientpy.errors import InvalidUser, InvalidPassword
+from wizclientpy.utils.urltools import buildCommandUrl
 
 
 @click.group(invoke_without_command=True)
@@ -28,14 +29,21 @@ def wizcli(ctx):
 @click.option("--user-id", prompt="User Name",
               help="Account name of your WizNote.")
 @click.option("--password", prompt="Password", hide_input=True,
-              help="Password of you WizNote account.")
-def login(ctx, user_id, password):
+              help="Password of you WizNote account. WARNING: To avoid"
+              " password being recorded in bash commandline history, this"
+              " option should not be used in production.")
+@click.option("-s", "--server", help="Set address of your account server."
+              " Server address can be a pure IP address or prefixed with http"
+              " or https schema.")
+def login(ctx, user_id, password, server):
     """
     Login to WizNote server.
     """
-    # Avoid being recorded in bash commandline history, password is always
-    # asked by hidden prompts.
-    token = WizToken(user_id, password)
+    if server:
+        as_server = WizKMAccountsServer(server)
+    token = WizToken()
+    token.setUserId(user_id)
+    token.setPasswd(password)
     try:
         strToken = token.token()
     except InvalidUser:
@@ -44,10 +52,30 @@ def login(ctx, user_id, password):
         click.echo("Password of `%s` is not correct!" % user_id)
     else:
         info = token.userInfo()
-        ctx.obj["user_info"] = info
         ctx.obj["token"] = token
         # Greetings
         click.echo("Hello '{name}' !".format(name=info.strDisplayName))
+
+
+@wizcli.command()
+@click.pass_context
+@click.option("-m", "--method", default="GET")
+@click.argument("url_command")
+def http(ctx, method, url_command):
+    # determing http method
+    method = method.upper()
+    """This tool is used to debug server APIs."""
+    # TODO: requre login
+    try:
+        token = ctx.obj["token"]
+    except KeyError:
+        click.echo("You should login first!")
+    else:
+        info = token.userInfo()
+        server = info.strKbServer
+        strToken = token.token()
+        strUrl = buildCommandUrl(server, url_command, strToken)
+        print(method, strUrl)
 
 
 @wizcli.command()
@@ -56,7 +84,7 @@ def user(ctx):
     """
     Show user information.
     """
-    click.echo(ctx.obj["user_info"])
+    print(ctx.obj["token"].userInfo())
 
 
 @wizcli.command()
