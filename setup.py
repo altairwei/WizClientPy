@@ -8,7 +8,8 @@ setup(
     install_requires=[
         "click",
         "click_repl",
-        "prompt_toolkit"
+        "prompt_toolkit",
+        "colorama"
     ],
     entry_points='''
         [console_scripts]

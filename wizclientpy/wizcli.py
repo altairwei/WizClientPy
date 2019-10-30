@@ -3,17 +3,21 @@
 import sys
 import os
 import platform
+import json
 from pathlib import Path
 
 import click
 from click_repl import repl
 from prompt_toolkit.history import FileHistory
+import requests
+from http.client import responses
 
 from wizclientpy.sync.kmserver import WizKMAccountsServer
 from wizclientpy.sync.token import WizToken
 from wizclientpy.constants import WIZNOTE_HOME_DIR, WIZNOTE_HOME
 from wizclientpy.errors import InvalidUser, InvalidPassword
 from wizclientpy.utils.urltools import buildCommandUrl
+from wizclientpy.utils.msgtools import error, warning, success
 
 
 @click.group(invoke_without_command=True)
@@ -47,14 +51,14 @@ def login(ctx, user_id, password, server):
     try:
         strToken = token.token()
     except InvalidUser:
-        click.echo("User `%s` does not exist!" % user_id)
+        click.echo(error("User `%s` does not exist!" % user_id))
     except InvalidPassword:
-        click.echo("Password of `%s` is not correct!" % user_id)
+        click.echo(error("Password of `%s` is not correct!" % user_id))
     else:
         info = token.userInfo()
         ctx.obj["token"] = token
         # Greetings
-        click.echo("Hello '{name}' !".format(name=info.strDisplayName))
+        click.echo(success("Hello '{name}' !".format(name=info.strDisplayName)))
 
 
 @wizcli.command()
@@ -62,20 +66,39 @@ def login(ctx, user_id, password, server):
 @click.option("-m", "--method", default="GET")
 @click.argument("url_command")
 def http(ctx, method, url_command):
+    """This tool is used to debug server APIs."""
     # determing http method
     method = method.upper()
-    """This tool is used to debug server APIs."""
     # TODO: requre login
     try:
         token = ctx.obj["token"]
     except KeyError:
-        click.echo("You should login first!")
+        click.secho("You should login first!", fg="red")
     else:
+        # Construct url
         info = token.userInfo()
         server = info.strKbServer
         strToken = token.token()
         strUrl = buildCommandUrl(server, url_command, strToken)
-        print(method, strUrl)
+        # Response from server
+        res = requests.request(method, strUrl)
+        # Display response
+        try:
+            # format json string
+            body = json.dumps(res.json(), indent=2, separators=(',', ': '))
+        except ValueError:
+            body = res.text
+        click.echo('{status_line}\r\n{header_field}\r\n\r\n{body}'.format(
+            status_line=click.style(
+                'HTTP/1.1 ' + str(res.status_code) + ' ' +
+                responses[res.status_code],
+                fg="blue"),
+            header_field='\r\n'.join(
+                '{}: {}'.format(
+                    click.style(k, fg="bright_black"),
+                    click.style(v, fg="cyan")) for k,
+                v in res.headers.items()),
+            body=body))
 
 
 @wizcli.command()
