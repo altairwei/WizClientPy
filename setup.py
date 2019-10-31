@@ -9,6 +9,7 @@ setup(
         "click",
         "click_repl",
         "prompt_toolkit",
+        "requests",
         "colorama"
     ],
     entry_points='''
