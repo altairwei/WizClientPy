@@ -10,7 +10,7 @@ def appendSrc(url):
     return url
 
 
-def buildCommandUrl(server, cmdUrl, strToken):
+def buildCommandUrl(server, cmdUrl, strToken=""):
     # Construct url
     if cmdUrl.startswith("http://") or cmdUrl.startswith("https://"):
         strUrl = cmdUrl

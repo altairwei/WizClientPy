@@ -94,9 +94,8 @@ def http(ctx, method, url_command):
                 responses[res.status_code],
                 fg="blue"),
             header_field='\r\n'.join(
-                '{}: {}'.format(
-                    click.style(k, fg="bright_black"),
-                    click.style(v, fg="cyan")) for k,
+                click.style(k + ': ', fg="bright_black") +
+                click.style(v, fg="cyan") for k,
                 v in res.headers.items()),
             body=body))
 

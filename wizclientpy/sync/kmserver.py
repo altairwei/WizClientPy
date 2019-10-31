@@ -7,26 +7,8 @@ from wizclientpy.sync import api
 from wizclientpy.sync.wizresp import WizResp
 from wizclientpy.sync.user_info import UserInfo
 from wizclientpy.utils.classtools import MetaSingleton
+from wizclientpy.utils.urltools import buildCommandUrl
 from wizclientpy.constants import WIZKM_WEBAPI_VERSION
-
-
-def appendNormalParams(strUrl, token):
-    if "?" not in strUrl:
-        strUrl += "?"
-    else:
-        strUrl += "&"
-    strUrl += (
-        "clientType=macos"  # macos means WizQTClient
-        "&clientVersion={client_version}"
-        "&apiVersion={api_version}"
-    ).format(
-        client_version=None,
-        api_version=WIZKM_WEBAPI_VERSION
-    )
-    if token:
-        strUrl += "&token=" + token
-    strUrl = api.appendSrc(strUrl)
-    return strUrl
 
 
 class WizKMApiServerBase:
@@ -50,7 +32,7 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
     def login(self, user_name, password):
         if self.isLogin:
             return True
-        url = self.buildUrl("/as/user/login")
+        url = buildCommandUrl(self.server, "/as/user/login")
         res = requests.post(url, json={
             "userId": user_name,
             "password": password
@@ -62,22 +44,25 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
         return True
 
     def keepAlive(self):
-        url = self.buildUrl("/as/user/keep")
-        res = requests.get(url)
-        res_json = WizResp(res).json()
-        pass
-
-    def getToken(self):
-        if not self.isLogin:
-            return ""
-        return self.strToken
-
-    def buildUrl(self, urlPath):
-        if urlPath.startswith("http://") or urlPath.startswith("https://"):
-            url = urlPath
-            return appendNormalParams(url, self.getToken())
+        """Extended expiration time of token by 15 min."""
+        if self.isLogin:
+            url = buildCommandUrl(
+                self.server, "/as/user/keep", self.userInfo.strToken)
+            res = requests.get(url)
+            res_json = WizResp(res).json()
+            return res_json["result"]["maxAge"]
         else:
-            if not urlPath.startswith("/"):
-                urlPath = "/" + urlPath
-            url = self.getServer() + urlPath
-            return appendNormalParams(url, self.getToken())
+            raise ServerXmlRpcError("Can not keep alive without login.")
+
+    def getToken(self, user_id, password):
+        url = buildCommandUrl(self.server, "/as/user/token")
+        res = requests.post(url, json={
+            "userId": user_id,
+            "password": password
+        })
+        result = WizResp(res).result()
+        return result["token"]
+
+    def setUserInfo(self, userInfo):
+        self.isLogin = True
+        self.userInfo = userInfo

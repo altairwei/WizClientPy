@@ -1,8 +1,9 @@
 import time
 
 from wizclientpy.sync.kmserver import WizKMAccountsServer
-from wizclientpy.errors import InvalidUser, InvalidPassword, TooManyLogins
+from wizclientpy.errors import InvalidUser, InvalidPassword, TooManyLogins, ServerXmlRpcError
 from wizclientpy.utils.classtools import MetaSingleton
+from wizclientpy.constants import TOKEN_TIMEOUT_INTERVAL
 
 
 class WizToken(metaclass=MetaSingleton):
@@ -33,7 +34,20 @@ class WizToken(metaclass=MetaSingleton):
             return self.__info.strToken
         else:
             # TODO: keep alive
-            pass
+            as_server = WizKMAccountsServer()
+            as_server.setUserInfo(self.__info)
+            try:
+                # Extend expiration time
+                as_server.keepAlive()
+                self.__info.tTokenExpried = time.time() + TOKEN_TIMEOUT_INTERVAL
+                return self.__info.strToken
+            except ServerXmlRpcError:
+                # Get new token
+                strToken = as_server.getToken(
+                    self.__strUserId, self.__strPasswd)
+                self.__info.strToken = strToken
+                self.__info.tTokenExpried = time.time() + TOKEN_TIMEOUT_INTERVAL
+                return strToken
 
 
 
