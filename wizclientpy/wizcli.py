@@ -63,9 +63,12 @@ def login(ctx, user_id, password, server):
 
 @wizcli.command()
 @click.pass_context
-@click.option("-m", "--method", default="GET")
-@click.argument("url_command")
-def http(ctx, method, url_command):
+@click.option("-j", "--json", help="Data items from the command line are"
+              " serialized as a JSON object.")
+@click.argument("method", nargs=1)
+@click.argument("url_command", nargs=1)
+@click.argument("request_item", nargs=-1)
+def http(ctx, json, method, url_command, request_item):
     """This tool is used to debug server APIs."""
     # determing http method
     method = method.upper()
@@ -80,6 +83,12 @@ def http(ctx, method, url_command):
         server = info.strKbServer
         strToken = token.token()
         strUrl = buildCommandUrl(server, url_command, strToken)
+        # Create params or data dict
+        item_dict = {}
+        for item in request_item:
+            kvalue = item.split("=")
+            if len(kvalue) == 2:
+                item_dict[kvalue[0]] = kvalue[1]
         # Response from server
         res = requests.request(method, strUrl)
         # Display response
