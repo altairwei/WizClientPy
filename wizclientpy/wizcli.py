@@ -63,34 +63,44 @@ def login(ctx, user_id, password, server):
 
 @wizcli.command()
 @click.pass_context
-@click.option("-j", "--json", help="Data items from the command line are"
-              " serialized as a JSON object.")
+@click.option(
+    "-j", "--json", "content_type", default=True, flag_value='json',
+    help="Data items from the command line are serialized as a JSON object.")
+@click.option(
+    "-f", "--form", "content_type", flag_value='form',
+    help="Data items from the command line are serialized as form fields.")
 @click.argument("method", nargs=1)
 @click.argument("url_command", nargs=1)
 @click.argument("request_item", nargs=-1)
-def http(ctx, json, method, url_command, request_item):
+def http(ctx, content_type, method, url_command, request_item):
     """This tool is used to debug server APIs."""
     # determing http method
     method = method.upper()
-    # TODO: requre login
     try:
         token = ctx.obj["token"]
     except KeyError:
-        click.secho("You should login first!", fg="red")
+        click.echo(warning("You should login first!"))
     else:
         # Construct url
         info = token.userInfo()
         server = info.strKbServer
         strToken = token.token()
         strUrl = buildCommandUrl(server, url_command, strToken)
-        # Create params or data dict
-        item_dict = {}
+        # Collect payload from commandline
+        payload = {}
         for item in request_item:
             kvalue = item.split("=")
             if len(kvalue) == 2:
-                item_dict[kvalue[0]] = kvalue[1]
+                payload[kvalue[0]] = kvalue[1]
         # Response from server
-        res = requests.request(method, strUrl)
+        if method == "GET":
+            res = requests.get(strUrl, params=payload)
+        elif method == "POST":
+            if content_type == "json":
+                payload = json.dumps(payload)
+            res = requests.post(strUrl, data=payload)
+        else:
+            res = requests.request(method, strUrl)
         # Display response
         try:
             # format json string
