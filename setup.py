@@ -10,7 +10,8 @@ setup(
         "click_repl",
         "prompt_toolkit",
         "requests",
-        "colorama"
+        "colorama",
+        "pygments"
     ],
     entry_points='''
         [console_scripts]

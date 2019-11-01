@@ -11,6 +11,10 @@ from click_repl import repl
 from prompt_toolkit.history import FileHistory
 import requests
 from http.client import responses
+from pygments import highlight
+from pygments.formatters.terminal import TerminalFormatter
+
+from pygments.lexers import get_lexer_for_mimetype
 
 from wizclientpy.sync.kmserver import WizKMAccountsServer
 from wizclientpy.sync.token import WizToken
@@ -107,6 +111,11 @@ def http(ctx, content_type, method, url_command, request_item):
             body = json.dumps(res.json(), indent=2, separators=(',', ': '))
         except ValueError:
             body = res.text
+        # Format and highlight content
+        lexer = get_lexer_for_mimetype(
+            res.headers['content-type'].split(";")[0])
+        formatter = TerminalFormatter()
+        body = highlight(body, lexer, formatter)
         click.echo('{status_line}\r\n{header_field}\r\n\r\n{body}'.format(
             status_line=click.style(
                 'HTTP/1.1 ' + str(res.status_code) + ' ' +
