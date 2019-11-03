@@ -37,12 +37,14 @@ class UserInfo:
         out = "[User '%s']\n" % self.strDisplayName
         for key in self.__dict__:
             if key in ["tCreated", "tVipExpried"]:
-                value = time.asctime(time.localtime(self.__dict__[key]/1000))
+                timestamp = self.__dict__[key]
+                if timestamp:
+                    value = time.asctime(time.localtime(timestamp/1000))
             elif key == "tTokenExpried":
                 value = time.asctime(time.localtime(self.__dict__[key]))
             else:
                 value = self.__dict__[key]
-            out += "  %s=%s\n" % (key, value)
+            out += "%s=%s\n" % (key, value)
         return out
 
 
@@ -86,9 +88,11 @@ class KbInfo:
 
 
 class KbValueVersions:
-    def __init__(self):
+    def __init__(self, info_json=None):
         self.inited = False
         self.versions = {}
+        if info_json:
+            self.fromJson(info_json)
 
     def fromJson(self, info_json):
         self.strKbGUID = info_json["kbGuid"]
