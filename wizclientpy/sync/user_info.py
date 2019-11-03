@@ -33,6 +33,11 @@ class UserInfo:
     def __str__(self):
         out = "[User '%s']\n" % self.strDisplayName
         for key in self.__dict__:
-            out += "  %s=%r\n" % (key, self.__dict__[key])
+            if key in ["tCreated", "tVipExpried"]:
+                value = time.asctime(time.localtime(self.__dict__[key]/1000))
+            elif key == "tTokenExpried":
+                value = time.asctime(time.localtime(self.__dict__[key]))
+            else:
+                value = self.__dict__[key]
+            out += "  %s=%s\n" % (key, value)
         return out
-

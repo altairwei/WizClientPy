@@ -60,6 +60,7 @@ QString WizTokenPrivate::token()
         WizKMAccountsServer asServer;
         asServer.setUserInfo(info);
 
+        // 延长Token有效期
         if (asServer.keepAlive())
         {
             m_info.tTokenExpried = QDateTime::currentDateTime().addSecs(TOKEN_TIMEOUT_INTERVAL);
@@ -68,6 +69,7 @@ QString WizTokenPrivate::token()
         else
         {
             QString strToken;
+            // 重新登录
             if (asServer.getToken(m_strUserId, m_strPasswd, strToken))
             {
                 m_info.strToken = strToken;
@@ -211,3 +213,20 @@ bool WizKMAccountsServer::login(const QString& strUserName, const QString& strPa
 
 ### 保持登录状态
 
+服务端返回的 Token 实际有效期是 15 分钟，但客户端使用保守的 10 分钟。因此，当判断 Token 过期时，会先尝试利用旧 Token 来延长有效期。
+
+```C++
+bool WizKMAccountsServer::keepAlive()
+{
+    QString urlPath = "/as/user/keep";
+    //
+    WIZSTANDARDRESULT jsonRet = NoResult::execStandardJsonRequest(*this, urlPath);
+    if (!jsonRet)
+    {
+        TOLOG1("Failed to call %1", urlPath);
+        return false;
+    }
+    //
+    return true;
+}
+```

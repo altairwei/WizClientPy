@@ -30,6 +30,7 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
         super().__init__(strServer)
 
     def login(self, user_name, password):
+        """Login to server and get access token."""
         if self.isLogin:
             return True
         url = buildCommandUrl(self.server, "/as/user/login")
