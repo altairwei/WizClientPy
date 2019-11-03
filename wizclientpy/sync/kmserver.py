@@ -28,6 +28,7 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
     def __init__(self, strServer=api.newAsServerUrl()):
         self.isLogin = False
         self.autoLogout = False
+        self.valueVersions = {}
         super().__init__(strServer)
 
     def login(self, user_name, password):
@@ -79,7 +80,16 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
             'count': nCountPerPage,
             'pageSize': nCountPerPage
         })
-        return WizResp(res).result()
+        result = WizResp(res).result()
+        kbValVerCollection = []
+        for obj in result:
+            kbValVerCollection.append(KbValueVersions(obj))
+        return kbValVerCollection
+
+    def initAllValueVersions(self):
+        versions = self.getValueVersions()
+        for version in versions:
+            self.valueVersions[version.strKbGUID] = version
 
 
 class WizKMDatabaseServer(WizKMApiServerBase):
@@ -88,3 +98,6 @@ class WizKMDatabaseServer(WizKMApiServerBase):
         self.__userInfo = userInfo
         self.__kbInfo = kbInfo
         self.__valueVersions = versions
+
+    def document_downloadDataNew(self):
+        pass
