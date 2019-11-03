@@ -5,7 +5,7 @@ import requests
 
 from wizclientpy.sync import api
 from wizclientpy.sync.wizresp import WizResp
-from wizclientpy.sync.user_info import UserInfo
+from wizclientpy.sync.user_info import UserInfo, KbInfo, KbValueVersions
 from wizclientpy.utils.classtools import MetaSingleton
 from wizclientpy.utils.urltools import buildCommandUrl
 from wizclientpy.constants import WIZKM_WEBAPI_VERSION
@@ -24,6 +24,7 @@ class WizKMApiServerBase:
 
 
 class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
+    """WizKMAccountsServer is used to manage account related information."""
     def __init__(self, strServer=api.newAsServerUrl()):
         self.isLogin = False
         self.autoLogout = False
@@ -67,3 +68,23 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
     def setUserInfo(self, userInfo):
         self.isLogin = True
         self.userInfo = userInfo
+
+    def getValueVersions(self):
+        nCountPerPage = 100
+        nNextVersion = 0
+        url = buildCommandUrl(
+            self.server, "/as/user/kv/versions", self.userInfo.strToken)
+        res = requests.get(url, params={
+            'version': nNextVersion,
+            'count': nCountPerPage,
+            'pageSize': nCountPerPage
+        })
+        return WizResp(res).result()
+
+
+class WizKMDatabaseServer(WizKMApiServerBase):
+    """WizKMDatabaseServer is used to manage knowledge database."""
+    def __init__(userInfo, kbInfo=KbInfo(), versions=KbValueVersions()):
+        self.__userInfo = userInfo
+        self.__kbInfo = kbInfo
+        self.__valueVersions = versions

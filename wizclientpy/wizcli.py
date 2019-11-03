@@ -13,14 +13,13 @@ import requests
 from http.client import responses
 from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
-
 from pygments.lexers import get_lexer_for_mimetype
 
 from wizclientpy.sync.kmserver import WizKMAccountsServer
 from wizclientpy.sync.token import WizToken
 from wizclientpy.constants import WIZNOTE_HOME_DIR, WIZNOTE_HOME
 from wizclientpy.errors import InvalidUser, InvalidPassword
-from wizclientpy.utils.urltools import buildCommandUrl
+from wizclientpy.utils.urltools import buildCommandUrl, highlightSyntax, formatHeaderField
 from wizclientpy.utils.msgtools import error, warning, success
 
 
@@ -67,6 +66,8 @@ def login(ctx, user_id, password, server):
 
 @wizcli.command()
 @click.pass_context
+@click.option("-s", "--show-request", is_flag=True,
+              help="Display request before response.")
 @click.option(
     "-j", "--json", "content_type", default=True, flag_value='json',
     help="Data items from the command line are serialized as a JSON object.")
@@ -76,7 +77,7 @@ def login(ctx, user_id, password, server):
 @click.argument("method", nargs=1)
 @click.argument("url_command", nargs=1)
 @click.argument("request_item", nargs=-1)
-def http(ctx, content_type, method, url_command, request_item):
+def http(ctx, content_type, show_request, method, url_command, request_item):
     """This tool is used to debug server APIs."""
     # determing http method
     method = method.upper()
@@ -112,19 +113,23 @@ def http(ctx, content_type, method, url_command, request_item):
         except ValueError:
             body = res.text
         # Format and highlight content
-        lexer = get_lexer_for_mimetype(
-            res.headers['content-type'].split(";")[0])
-        formatter = TerminalFormatter()
-        body = highlight(body, lexer, formatter)
+        body = highlightSyntax(body, res.headers['content-type'].split(";")[0])
+        if show_request:
+            click.echo("-------------------REQUEST-------------------")
+            click.echo('{request_line}\r\n{header_field}\r\n\r\n{body}'.format(
+                request_line=click.style(
+                    '%s %s' % (res.request.method, res.request.url),
+                    fg="blue"),
+                header_field=formatHeaderField(res.request.headers.items()),
+                body=res.request.body))
+            click.echo("\r\n")
+        click.echo("-------------------RESPONSE-------------------")
         click.echo('{status_line}\r\n{header_field}\r\n\r\n{body}'.format(
             status_line=click.style(
                 'HTTP/1.1 ' + str(res.status_code) + ' ' +
                 responses[res.status_code],
                 fg="blue"),
-            header_field='\r\n'.join(
-                click.style(k + ': ', fg="bright_black") +
-                click.style(v, fg="cyan") for k,
-                v in res.headers.items()),
+            header_field=formatHeaderField(res.headers.items()),
             body=body))
 
 

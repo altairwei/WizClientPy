@@ -230,3 +230,32 @@ bool WizKMAccountsServer::keepAlive()
     return true;
 }
 ```
+
+### 创建账户
+
+这个API似乎是无效的。
+
+```C++
+bool WizKMAccountsServer::createAccount(const QString& strUserName, const QString& strPassword, const QString& strInviteCode, const QString& strCaptchaID, const QString& strCaptcha)
+{
+    QString urlPath = "/as/user/register";
+    Json::Value params;
+    params["userId"] = strUserName.toStdString();
+    params["password"] = strPassword.toStdString();
+    params["inviteCode"] = strInviteCode.toStdString();
+    params["productName"] = "WizNoteQT";
+    if (!strCaptchaID.isEmpty())
+    {
+        params["captchaId"] = strCaptchaID.toStdString();
+        params["captcha"] = strCaptcha.toStdString();
+    }
+    //
+    if (!WithResult::execStandardJsonRequest<WIZUSERINFO>(*this, urlPath, m_userInfo, "POST", params))
+    {
+        TOLOG("Failed to create account");
+        return false;
+    }
+    //
+    return true;
+}
+```

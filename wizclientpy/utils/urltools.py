@@ -2,6 +2,11 @@
 
 from urllib.parse import urlparse
 
+import click
+from pygments import highlight
+from pygments.formatters.terminal import TerminalFormatter
+from pygments.lexers import get_lexer_for_mimetype
+
 from wizclientpy.constants import WIZKM_WEBAPI_VERSION
 
 
@@ -35,3 +40,15 @@ def buildCommandUrl(server, cmdUrl, strToken=""):
         strUrl += "&token=" + strToken
     strUrl = appendSrc(strUrl)
     return strUrl
+
+
+def highlightSyntax(content, mimetype):
+    lexer = get_lexer_for_mimetype(mimetype)
+    formatter = TerminalFormatter()
+    return highlight(content, lexer, formatter)
+
+
+def formatHeaderField(items):
+    return '\r\n'.join(
+        click.style(k + ': ', fg="bright_black") +
+        click.style(v, fg="cyan") for k, v in items)
