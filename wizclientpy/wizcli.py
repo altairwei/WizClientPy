@@ -20,6 +20,7 @@ from wizclientpy.constants import WIZNOTE_HOME_DIR, WIZNOTE_HOME
 from wizclientpy.errors import InvalidUser, InvalidPassword
 from wizclientpy.utils.msgtools import error, warning, success
 from wizclientpy.cmd.http import http
+from wizclientpy.cmd.db import db
 
 
 @click.group(invoke_without_command=True)
@@ -64,6 +65,7 @@ def login(ctx, user_id, password, server):
 
 
 wizcli.add_command(http)
+wizcli.add_command(db)
 
 
 @wizcli.command()
