@@ -15,40 +15,47 @@ def db(ctx, user_id):
     ctx.obj["index_db_file"] = index_db_file
 
 
-@db.command()
+@db.group()
 @click.pass_context
-@click.option("-n", "--meta-name", required=False)
-@click.option("-k", "--meta-key", required=False)
-def meta(ctx, meta_name, meta_key):
+def meta(ctx):
+    pass
+
+
+@meta.command(name="get")
+@click.pass_context
+@click.argument("meta_name", required=False)
+@click.argument("meta_key", required=False)
+def get_meta(ctx, meta_name, meta_key):
     index_db_file = ctx.obj["index_db_file"]
     with sqlite3.connect(index_db_file) as index_db:
         cursor = index_db.cursor()
-        sql_cmd = "select META_NAME,META_KEY,META_VALUE from WIZ_META"
+        sql_cmd = "select distinct {col} from WIZ_META"
         echo_prefix = ""
-        col = 0
         if meta_name:
             meta_name = meta_name.upper()
+            sql_cmd += " where META_NAME='%s'" % meta_name
             if meta_key:
                 # Query the value of a given meta key
                 meta_key = meta_key.upper()
-                sql_cmd += " where META_NAME='%s' and META_KEY='%s'" % (
-                    meta_name, meta_key)
-                col = 2
+                sql_cmd += " and META_KEY='%s'" % meta_key
+                sql_cmd = sql_cmd.format(col="META_VALUE")
             else:
                 # Query all meta keys for given meta name
-                sql_cmd += " where META_NAME='%s'" % meta_name
-                echo_prefix = "Existed {0}s of {1}: ".format(
+                echo_prefix = "{0}s of {1}: ".format(
                     click.style("META_KEY", fg="blue"), meta_name)
-                col = 1
+                sql_cmd = sql_cmd.format(col="META_KEY")
         else:
             # Query all meta names
-            echo_prefix = "Existed {0}s: ".format(
+            echo_prefix = "{0}s: ".format(
                 click.style("META_NAME", fg="blue"))
-            col = 0
+            sql_cmd = sql_cmd.format(col="META_NAME")
         cursor.execute(sql_cmd)
         all_rows = cursor.fetchall()
-        uniq_vals = set()
-        for row in all_rows:
-            uniq_vals.add(row[col])
         click.echo(echo_prefix + " ".join(
-            val for val in uniq_vals))
+            row[0] for row in all_rows))
+
+
+@meta.command(name="set")
+@click.pass_context
+def set_meta(ctx):
+    pass
