@@ -28,14 +28,14 @@ class WizToken(metaclass=MetaSingleton):
         if not self.__info:
             as_server = WizKMAccountsServer()
             as_server.login(self.__strUserId, self.__strPasswd)
-            self.__info = as_server.userInfo
+            self.__info = as_server.user_info()
         # Check for token expiration
         if self.__info.tTokenExpried >= time.time():
             return self.__info.strToken
         else:
             # TODO: keep alive
             as_server = WizKMAccountsServer()
-            as_server.setUserInfo(self.__info)
+            as_server.set_user_info(self.__info)
             try:
                 # Extend expiration time
                 as_server.keep_alive()
@@ -43,7 +43,7 @@ class WizToken(metaclass=MetaSingleton):
                 return self.__info.strToken
             except ServerXmlRpcError:
                 # Get new token
-                strToken = as_server.getToken(
+                strToken = as_server.fetch_token(
                     self.__strUserId, self.__strPasswd)
                 self.__info.strToken = strToken
                 self.__info.tTokenExpried = time.time() + TOKEN_TIMEOUT_INTERVAL

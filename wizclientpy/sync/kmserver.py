@@ -1,6 +1,8 @@
 """
 WizNote API server.
 """
+from typing import Dict
+
 import requests
 
 from wizclientpy.sync import api
@@ -12,7 +14,10 @@ from wizclientpy.constants import WIZKM_WEBAPI_VERSION
 
 
 class WizKMApiServerBase:
-    def __init__(self, strServer):
+    """Base class of api object."""
+    server: str
+
+    def __init__(self, strServer: str):
         while strServer.endswith("/"):
             strServer = strServer[:-1]
         if not strServer.startswith("http"):
@@ -25,15 +30,20 @@ class WizKMApiServerBase:
 
 class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
     """WizKMAccountsServer is used to manage account related information."""
-    def __init__(self, strServer=api.newAsServerUrl()):
-        self.isLogin = False
-        self.autoLogout = False
-        self.valueVersions = {}
+    __isLogin: bool
+    __autoLogout: bool
+    __valueVersions: Dict
+    __userInfo: UserInfo
+
+    def __init__(self, strServer: str = api.newAsServerUrl()):
+        self.__isLogin = False
+        self.__autoLogout = False
+        self.__valueVersions = {}
         super().__init__(strServer)
 
-    def login(self, user_name, password):
+    def login(self, user_name: str, password: str) -> bool:
         """Login to server and get access token."""
-        if self.isLogin:
+        if self.__isLogin:
             return True
         url = buildCommandUrl(self.server, "/as/user/login")
         result = json_request("POST", url, body={
@@ -41,21 +51,29 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
             "password": password
         })
         # Update user information
-        self.userInfo = UserInfo(result)
-        self.isLogin = True
+        self.__userInfo = UserInfo(result)
+        self.__isLogin = True
+        return True
+
+    def logout(self) -> bool:
+        """Logout the current token."""
+        url = buildCommandUrl(
+            self.server, "/as/user/logout", self.__userInfo.strToken)
+        json_request("GET", url, token=self.__userInfo.strToken)
         return True
 
     def keep_alive(self):
         """Extended expiration time of token by 15 min."""
-        if self.isLogin:
+        if self.__isLogin:
             url = buildCommandUrl(
-                self.server, "/as/user/keep", self.userInfo.strToken)
-            result = json_request("GET", url, token=self.userInfo.strToken)
+                self.server, "/as/user/keep", self.__userInfo.strToken)
+            result = json_request("GET", url, token=self.__userInfo.strToken)
             return result["maxAge"]
         else:
             raise ServerXmlRpcError("Can not keep alive without login.")
 
-    def getToken(self, user_id, password):
+    def fetch_token(self, user_id, password):
+        """Get a token by user identity."""
         url = buildCommandUrl(self.server, "/as/user/token")
         result = json_request("POST", url, {
             "userId": user_id,
@@ -63,16 +81,27 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
         })
         return result["token"]
 
-    def setUserInfo(self, userInfo):
-        self.isLogin = True
-        self.userInfo = userInfo
+    def fetch_user_info(self) -> UserInfo:
+        """Get user information from server by token."""
+        url = buildCommandUrl(
+            self.server, "/as/user/keep", self.__userInfo.strToken)
+        result = json_request("GET", url, token=self.__userInfo.strToken)
 
-    def getValueVersions(self):
+    def user_info(self) -> UserInfo:
+        """Access to user information object."""
+        return self.__userInfo
+
+    def set_user_info(self, userInfo: UserInfo):
+        """Set new user info."""
+        self.__isLogin = True
+        self.__userInfo = userInfo
+
+    def fetch_value_versions(self):
         nCountPerPage = 100
         nNextVersion = 0
         url = buildCommandUrl(
-            self.server, "/as/user/kv/versions", self.userInfo.strToken)
-        result = json_request("GET", url, token=self.userInfo.strToken, body={
+            self.server, "/as/user/kv/versions", self.__userInfo.strToken)
+        result = json_request("GET", url, token=self.__userInfo.strToken, body={
             'version': nNextVersion,
             'count': nCountPerPage,
             'pageSize': nCountPerPage
@@ -82,10 +111,10 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
             kbValVerCollection.append(KbValueVersions(obj))
         return kbValVerCollection
 
-    def initAllValueVersions(self):
-        versions = self.getValueVersions()
+    def init_all_value_versions(self):
+        versions = self.fetch_value_versions()
         for version in versions:
-            self.valueVersions[version.strKbGUID] = version
+            self.__valueVersions[version.strKbGUID] = version
 
 
 class WizKMDatabaseServer(WizKMApiServerBase):
