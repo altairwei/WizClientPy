@@ -19,7 +19,6 @@ from wizclientpy.sync.token import WizToken
 from wizclientpy.constants import WIZNOTE_HOME_DIR, WIZNOTE_HOME
 from wizclientpy.errors import InvalidUser, InvalidPassword
 from wizclientpy.utils.msgtools import error, warning, success
-from wizclientpy.cmd.http import http
 from wizclientpy.cmd.db import db
 
 
@@ -61,10 +60,10 @@ def login(ctx, user_id, password, server):
         info = token.userInfo()
         ctx.obj["token"] = token
         # Greetings
-        click.echo(success("Hello '{name}' !".format(name=info.strDisplayName)))
+        click.echo(success("Hello '{name}'".format(
+            name=info.strDisplayName)))
 
 
-wizcli.add_command(http)
 wizcli.add_command(db)
 
 
