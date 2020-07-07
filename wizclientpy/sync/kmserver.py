@@ -4,7 +4,7 @@ WizNote API server.
 import requests
 
 from wizclientpy.sync import api
-from wizclientpy.sync.wizresp import WizResp
+from wizclientpy.sync.wizrequest import WizResp, json_request
 from wizclientpy.sync.user_info import UserInfo, KbInfo, KbValueVersions
 from wizclientpy.utils.classtools import MetaSingleton
 from wizclientpy.utils.urltools import buildCommandUrl
@@ -19,7 +19,7 @@ class WizKMApiServerBase:
             strServer = "https://" + strServer
         self.server = strServer
 
-    def getServer(self):
+    def server(self):
         return self.server
 
 
@@ -36,34 +36,31 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
         if self.isLogin:
             return True
         url = buildCommandUrl(self.server, "/as/user/login")
-        res = requests.post(url, json={
+        result = json_request("POST", url, body={
             "userId": user_name,
             "password": password
         })
-        res_json = WizResp(res).json()
         # Update user information
-        self.userInfo = UserInfo(res_json["result"])
+        self.userInfo = UserInfo(result)
         self.isLogin = True
         return True
 
-    def keepAlive(self):
+    def keep_alive(self):
         """Extended expiration time of token by 15 min."""
         if self.isLogin:
             url = buildCommandUrl(
                 self.server, "/as/user/keep", self.userInfo.strToken)
-            res = requests.get(url)
-            res_json = WizResp(res).json()
-            return res_json["result"]["maxAge"]
+            result = json_request("GET", url, token=self.userInfo.strToken)
+            return result["maxAge"]
         else:
             raise ServerXmlRpcError("Can not keep alive without login.")
 
     def getToken(self, user_id, password):
         url = buildCommandUrl(self.server, "/as/user/token")
-        res = requests.post(url, json={
+        result = json_request("POST", url, {
             "userId": user_id,
             "password": password
         })
-        result = WizResp(res).result()
         return result["token"]
 
     def setUserInfo(self, userInfo):
@@ -75,12 +72,11 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
         nNextVersion = 0
         url = buildCommandUrl(
             self.server, "/as/user/kv/versions", self.userInfo.strToken)
-        res = requests.get(url, params={
+        result = json_request("GET", url, token=self.userInfo.strToken, body={
             'version': nNextVersion,
             'count': nCountPerPage,
             'pageSize': nCountPerPage
         })
-        result = WizResp(res).result()
         kbValVerCollection = []
         for obj in result:
             kbValVerCollection.append(KbValueVersions(obj))

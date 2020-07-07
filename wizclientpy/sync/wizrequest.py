@@ -1,5 +1,9 @@
 import json
+from typing import Dict, Any
 
+import requests
+
+from wizclientpy import __version__
 from wizclientpy.errors import *
 
 
@@ -37,3 +41,13 @@ class WizResp:
 
     def text(self):
         return self.__text
+
+
+def json_request(
+        method: str, url: str, body: Dict[str, Any] = None,
+        token: str = None):
+    headers = {'user-agent': 'wizcli/%s' % __version__}
+    if token:
+        headers['X-Wiz-Token'] = token
+    resp = requests.request(method, url, json=body)
+    return WizResp(resp).result()

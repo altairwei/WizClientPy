@@ -38,7 +38,7 @@ class WizToken(metaclass=MetaSingleton):
             as_server.setUserInfo(self.__info)
             try:
                 # Extend expiration time
-                as_server.keepAlive()
+                as_server.keep_alive()
                 self.__info.tTokenExpried = time.time() + TOKEN_TIMEOUT_INTERVAL
                 return self.__info.strToken
             except ServerXmlRpcError:
