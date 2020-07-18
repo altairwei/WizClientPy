@@ -5,87 +5,90 @@ from typing import Dict
 
 import requests
 
-from wizclientpy.sync import api
-from wizclientpy.sync.wizrequest import WizResp, json_request
+from wizclientpy.sync.api import WIZNOTE_ACOUNT_SERVER
+from wizclientpy.sync.wizrequest import exec_request
 from wizclientpy.sync.user_info import UserInfo, KbInfo, KbValueVersions
+from wizclientpy.sync.token import WizToken
 from wizclientpy.utils.classtools import MetaSingleton
 from wizclientpy.utils.urltools import buildCommandUrl
 from wizclientpy.constants import WIZKM_WEBAPI_VERSION
+from wizclientpy.errors import ServerXmlRpcError
 
 
-class WizKMApiServerBase:
+class ServerApi:
     """Base class of api object."""
-    server: str
+    __server: str
 
     def __init__(self, strServer: str):
         while strServer.endswith("/"):
             strServer = strServer[:-1]
         if not strServer.startswith("http"):
             strServer = "https://" + strServer
-        self.server = strServer
+        self.__server = strServer
 
     def server(self):
-        return self.server
+        return self.__server
 
 
-class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
-    """WizKMAccountsServer is used to manage account related information."""
+class AccountsServerApi(ServerApi):
+    """AccountsServerApi is used to manage account related information."""
     __isLogin: bool
     __autoLogout: bool
     __valueVersions: Dict
     __userInfo: UserInfo
 
-    def __init__(self, strServer: str = api.newAsServerUrl()):
+    def __init__(self, server: str = WIZNOTE_ACOUNT_SERVER):
         self.__isLogin = False
         self.__autoLogout = False
         self.__valueVersions = {}
-        super().__init__(strServer)
+        super().__init__(server)
 
-    def login(self, user_name: str, password: str) -> bool:
+    def login(self, user_name: str, password: str):
         """Login to server and get access token."""
         if self.__isLogin:
             return True
-        url = buildCommandUrl(self.server, "/as/user/login")
-        result = json_request("POST", url, body={
+        url = buildCommandUrl(self.__server, "/as/user/login")
+        result = exec_request("POST", url, body={
             "userId": user_name,
             "password": password
         })
         # Update user information
         self.__userInfo = UserInfo(result)
         self.__isLogin = True
-        return True
+        return result
 
     def logout(self) -> bool:
         """Logout the current token."""
         url = buildCommandUrl(
-            self.server, "/as/user/logout", self.__userInfo.strToken)
-        json_request("GET", url, token=self.__userInfo.strToken)
-        return True
+            self.__server, "/as/user/logout", self.__userInfo.strToken)
+        result = exec_request("GET", url, token=self.__userInfo.strToken)
+        return result
 
     def keep_alive(self):
         """Extended expiration time of token by 15 min."""
         if self.__isLogin:
             url = buildCommandUrl(
-                self.server, "/as/user/keep", self.__userInfo.strToken)
-            result = json_request("GET", url, token=self.__userInfo.strToken)
-            return result["maxAge"]
+                self.__server, "/as/user/keep", self.__userInfo.strToken)
+            result = exec_request("GET", url, token=self.__userInfo.strToken)
+            return result
         else:
             raise ServerXmlRpcError("Can not keep alive without login.")
 
     def fetch_token(self, user_id, password):
         """Get a token by user identity."""
-        url = buildCommandUrl(self.server, "/as/user/token")
-        result = json_request("POST", url, {
+        url = buildCommandUrl(self.__server, "/as/user/token")
+        result = exec_request("POST", url, {
             "userId": user_id,
             "password": password
         })
-        return result["token"]
+        return result
 
-    def fetch_user_info(self) -> UserInfo:
+    def fetch_user_info(self):
         """Get user information from server by token."""
         url = buildCommandUrl(
-            self.server, "/as/user/keep", self.__userInfo.strToken)
-        result = json_request("GET", url, token=self.__userInfo.strToken)
+            self.__server, "/as/user/keep", self.__userInfo.strToken)
+        result = exec_request("GET", url, token=self.__userInfo.strToken)
+        return result
 
     def user_info(self) -> UserInfo:
         """Access to user information object."""
@@ -100,12 +103,14 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
         nCountPerPage = 100
         nNextVersion = 0
         url = buildCommandUrl(
-            self.server, "/as/user/kv/versions", self.__userInfo.strToken)
-        result = json_request("GET", url, token=self.__userInfo.strToken, body={
-            'version': nNextVersion,
-            'count': nCountPerPage,
-            'pageSize': nCountPerPage
-        })
+            self.__server, "/as/user/kv/versions", self.__userInfo.strToken)
+        result = exec_request(
+            "GET", url, token=self.__userInfo.strToken, body={
+                'version': nNextVersion,
+                'count': nCountPerPage,
+                'pageSize': nCountPerPage
+            }
+        )
         kbValVerCollection = []
         for obj in result:
             kbValVerCollection.append(KbValueVersions(obj))
@@ -117,12 +122,22 @@ class WizKMAccountsServer(WizKMApiServerBase, metaclass=MetaSingleton):
             self.__valueVersions[version.strKbGUID] = version
 
 
-class WizKMDatabaseServer(WizKMApiServerBase):
+class KnowledgeBaseServerApi(ServerApi):
     """WizKMDatabaseServer is used to manage knowledge database."""
-    def __init__(userInfo, kbInfo=KbInfo(), versions=KbValueVersions()):
-        self.__userInfo = userInfo
-        self.__kbInfo = kbInfo
-        self.__valueVersions = versions
+    __kbGuid: str
+    __token: WizToken
 
-    def document_downloadDataNew(self):
-        pass
+    def __init__(self, server: str, kb_guid: str):
+        self.__server = server
+        self.__kbGuid = kb_guid
+
+    def download_document(self, doc_guid: str):
+        params = {
+            "downloadInfo": True,
+            "downloadData": True
+        }
+        url = buildCommandUrl(
+            self.__server, f"/ks/note/download/{self.__kbGuid}/{doc_guid}",
+            self.__userInfo.strToken)
+        result = exec_request("GET", url, params=params)
+        return result

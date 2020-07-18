@@ -52,6 +52,7 @@ WIZNOTE_API_COMMAND_UPGRADE = "updatev2"
 WIZNOTE_API_COMMAND_MAIL_SHARE = "mail_share2"
 
 WIZNOTE_API_SERVER = "https://api.wiz.cn/"
+WIZNOTE_ACOUNT_SERVER = "https://as.wiz.cn/"
 
 _server = WIZNOTE_API_SERVER
 _url_cache = dict()

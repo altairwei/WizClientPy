@@ -14,7 +14,7 @@ from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 
-from wizclientpy.sync.kmserver import WizKMAccountsServer
+from wizclientpy.sync.kmserver import AccountsServer, DatabaseServer
 from wizclientpy.sync.token import WizToken
 from wizclientpy.constants import WIZNOTE_HOME_DIR, WIZNOTE_HOME
 from wizclientpy.errors import InvalidUser, InvalidPassword
@@ -46,7 +46,7 @@ def login(ctx, user_id, password, server):
     Login to WizNote server.
     """
     if server:
-        as_server = WizKMAccountsServer(server)
+        as_server = AccountsServer(server)
     token = WizToken()
     token.setUserId(user_id)
     token.setPasswd(password)
