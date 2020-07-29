@@ -14,7 +14,9 @@ from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 
-from wizclientpy.sync.kmserver import AccountsServer, DatabaseServer
+from wizclientpy.sync.api import (
+    AccountsServerApi, KnowledgeBaseServerApi)
+from wizclientpy.sync.api import WIZNOTE_ACOUNT_SERVER
 from wizclientpy.sync.token import WizToken
 from wizclientpy.constants import WIZNOTE_HOME_DIR, WIZNOTE_HOME
 from wizclientpy.errors import InvalidUser, InvalidPassword
@@ -40,28 +42,24 @@ def wizcli(ctx):
               " option should not be used in production.")
 @click.option("-s", "--server", help="Set address of your account server."
               " Server address can be a pure IP address or prefixed with http"
-              " or https schema.")
+              " or https schema.", default=WIZNOTE_ACOUNT_SERVER)
 def login(ctx, user_id, password, server):
     """
     Login to WizNote server.
     """
-    if server:
-        as_server = AccountsServer(server)
-    token = WizToken()
-    token.setUserId(user_id)
-    token.setPasswd(password)
+    token = WizToken(server, user_id, password)
     try:
-        strToken = token.token()
+        user_info = token.login()
     except InvalidUser:
         click.echo(error("User `%s` does not exist!" % user_id))
     except InvalidPassword:
         click.echo(error("Password of `%s` is not correct!" % user_id))
     else:
-        info = token.userInfo()
         ctx.obj["token"] = token
+        ctx.obj["user_info"] = user_info
         # Greetings
         click.echo(success("Hello '{name}'".format(
-            name=info.strDisplayName)))
+            name=user_info.strDisplayName)))
 
 
 wizcli.add_command(db)
@@ -76,7 +74,7 @@ def user(ctx, keys):
 
     You can query the value of a given KEYS.
     """
-    info = ctx.obj["token"].userInfo()
+    info = ctx.obj["user_info"]
     if keys:
         for key in keys:
             if key in dir(info):
