@@ -1,7 +1,7 @@
 import time
 from threading import Timer, Thread
 
-from wizclientpy.sync.api import ServerApi, AccountsServerApi
+from wizclientpy.sync.api import ServerApi
 from wizclientpy.sync.wizrequest import exec_request
 from wizclientpy.sync.user_info import UserInfo
 from wizclientpy.errors import (
