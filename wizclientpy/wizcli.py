@@ -14,14 +14,14 @@ from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 
-from wizclientpy.sync.api import (
-    AccountsServerApi, KnowledgeBaseServerApi)
+from wizclientpy.sync import require_login
 from wizclientpy.sync.api import WIZNOTE_ACOUNT_SERVER
 from wizclientpy.sync.token import WizToken
 from wizclientpy.constants import WIZNOTE_HOME_DIR, WIZNOTE_HOME
 from wizclientpy.errors import InvalidUser, InvalidPassword
 from wizclientpy.utils.msgtools import error, warning, success
 from wizclientpy.cmd.db import db
+from wizclientpy.cmd.apitest import apitest
 
 
 @click.group(invoke_without_command=True)
@@ -47,22 +47,15 @@ def login(ctx, user_id, password, server):
     """
     Login to WizNote server.
     """
-    token = WizToken(server, user_id, password)
-    try:
-        user_info = token.login()
-    except InvalidUser:
-        click.echo(error("User `%s` does not exist!" % user_id))
-    except InvalidPassword:
-        click.echo(error("Password of `%s` is not correct!" % user_id))
-    else:
-        ctx.obj["token"] = token
-        ctx.obj["user_info"] = user_info
-        # Greetings
-        click.echo(success("Hello '{name}'".format(
-            name=user_info.strDisplayName)))
+    require_login(server, user_id, password)
+    user_info = ctx.obj["user_info"]
+    # Greetings
+    click.echo(success("Hello '{name}'".format(
+        name=user_info.strDisplayName)))
 
 
 wizcli.add_command(db)
+wizcli.add_command(apitest)
 
 
 @wizcli.command()
