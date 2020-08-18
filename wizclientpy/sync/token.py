@@ -67,3 +67,6 @@ class WizToken(ServerApi):
             self.__token = user.strToken
 
         return result
+
+    def get(self):
+        return self.__token

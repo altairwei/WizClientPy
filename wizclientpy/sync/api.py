@@ -7,7 +7,7 @@ import platform
 import random
 import time
 import locale
-from typing import Dict
+from typing import Dict, Any
 from urllib.parse import urlparse, urljoin, urlencode
 
 import requests
@@ -76,7 +76,8 @@ class ServerApi:
     def server(self):
         return self.__server
 
-    def build_url(self, cmd_url: str, token: str = None) -> str:
+    def build_url(self, cmd_url: str, token: str = None,
+                  params: Dict[str, Any] = None) -> str:
         """Build full url with a command url."""
         # Construct url
         url = urlparse(cmd_url)
@@ -89,6 +90,8 @@ class ServerApi:
             'clientVersion': None,
             'apiVersion': WIZKM_WEBAPI_VERSION
         }
+        if params:
+            queries.update(params)
         if token is not None:
             queries['token'] = token
         url = url._replace(query=urlencode(queries))
@@ -184,14 +187,16 @@ class KnowledgeBaseServerApi(ServerApi):
 
     def __init__(self, server: str, kb_guid: str):
         super().__init__(server)
-        self.__kbGuid = kb_guid        
+        self.__kbGuid = kb_guid
 
-    def download_document(self, doc_guid: str, token: str):
-        params = {
-            "downloadInfo": True,
-            "downloadData": True
-        }
+    def download_document(
+            self, doc_guid: str, token: str, withData: bool = False):
+        params = {}
+        if withData:
+            params["downloadData"] = 1
+        else:
+            params["downloadInfo"] = 1
         url = self.build_url(
-            f"/ks/note/download/{self.__kbGuid}/{doc_guid}", token)
-        result = exec_request("GET", url, params=params, token=token)
+            f"/ks/note/download/{self.__kbGuid}/{doc_guid}", token, params)
+        result = exec_request("GET", url, token=token)
         return result
