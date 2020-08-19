@@ -5,7 +5,7 @@ import click
 
 from wizclientpy.sync import require_login
 from wizclientpy.sync.api import AccountsServerApi, KnowledgeBaseServerApi
-from wizclientpy.utils.urltools import highlightSyntax
+from wizclientpy.utils.msgtools import print_json
 
 
 @click.group()
@@ -18,14 +18,26 @@ def apitest(ctx):
 @click.pass_obj
 def as_server(obj):
     if "as_server_api" not in obj:
-        obj["as_server_api"] = AccountsServerApi()
+        obj["as_server_api"] = AccountsServerApi(obj["user_info"].as_server)
 
 
 @as_server.command()
 @click.argument("user_name")
 @click.argument("password")
-def login(user_name, password):
-    pass
+@click.pass_obj
+def login(obj, user_name, password):
+    as_server = obj["as_server_api"]
+    result = as_server.login(user_name, password)
+    print_json(result)
+
+
+@as_server.command()
+@click.pass_obj
+def logout(obj):
+    as_server = obj["as_server_api"]
+    token = obj["token"]
+    result = as_server.logout(token.get())
+    print_json(result)
 
 
 @apitest.group(name="ks")
@@ -44,6 +56,4 @@ def download_document(obj, with_data, doc_guid):
     token = obj["token"]
     kb_server = obj["kb_server_api"]
     res = kb_server.download_document(doc_guid, token.get(), with_data)
-    body_content = json.dumps(res, indent=2, separators=(',', ': '))
-    body_content = highlightSyntax(body_content, "application/json")
-    click.echo(body_content)
+    print_json(res)
