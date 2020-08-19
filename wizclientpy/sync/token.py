@@ -44,8 +44,8 @@ class WizToken(ServerApi):
         self.__timer.cancel()
         result = self.__login()
         # Update token
-        user = UserInfo(result)
-        self.__token = user.strToken
+        user = UserInfo(self.server(), result)
+        self.__token = user.token
         # Start keep alive timer
         self.__timer.start()
         return user
@@ -63,8 +63,8 @@ class WizToken(ServerApi):
         except InvalidToken:
             # Get a new token
             result = self.__login()
-            user = UserInfo(result)
-            self.__token = user.strToken
+            user = UserInfo(self.server(), result)
+            self.__token = user.token
 
         return result
 

@@ -121,7 +121,7 @@ class AccountsServerApi(ServerApi):
             "password": password
         })
         # Update user information
-        self.__userInfo = UserInfo(result)
+        self.__userInfo = UserInfo(self.server(), result)
         self.__isLogin = True
         return result
 
@@ -151,7 +151,7 @@ class AccountsServerApi(ServerApi):
 
     def fetch_user_info(self, token: str):
         """Get user information from server by token."""
-        url = buildCommandUrl("/as/user/keep", token)
+        url = self.build_url("/as/user/keep", token)
         result = exec_request("GET", url, token=token)
         return result
 

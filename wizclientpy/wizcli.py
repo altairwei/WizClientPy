@@ -51,7 +51,7 @@ def login(ctx, user_id, password, server):
     user_info = ctx.obj["user_info"]
     # Greetings
     click.echo(success("Hello '{name}'".format(
-        name=user_info.strDisplayName)))
+        name=user_info.display_name)))
 
 
 wizcli.add_command(db)
