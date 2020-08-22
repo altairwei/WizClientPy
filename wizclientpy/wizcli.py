@@ -42,11 +42,18 @@ def wizcli(ctx):
               " option should not be used in production.")
 @click.option("-s", "--server", help="Set address of your account server."
               " Server address can be a pure IP address or prefixed with http"
-              " or https schema.", default=WIZNOTE_ACOUNT_SERVER)
-def login(ctx, user_id, password, server):
+              " or https schema.", default=WIZNOTE_ACOUNT_SERVER,
+              show_default=True)
+@click.option("-a", "--auto-login", is_flag=True,
+              help="Automatically login with default user.")
+@click.option("-r", "--remember", is_flag=True, help="Remember user name and"
+              "password, then set it to default user.")
+def login(ctx, user_id, password, server, auto_login, remember):
     """
     Login to WizNote server.
     """
+    if auto_login:
+        pass
     require_login(server, user_id, password)
     user_info = ctx.obj["user_info"]
     # Greetings
