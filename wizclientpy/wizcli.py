@@ -4,6 +4,7 @@ import sys
 import os
 import platform
 import json
+import base64
 from pathlib import Path
 
 import click
@@ -22,6 +23,7 @@ from wizclientpy.errors import InvalidUser, InvalidPassword
 from wizclientpy.utils.msgtools import error, warning, success
 from wizclientpy.cmd.db import db
 from wizclientpy.cmd.apitest import apitest
+from wizclientpy.database.user_setting import GlobalSetting, UserSetting
 
 
 @click.group(invoke_without_command=True)
@@ -34,10 +36,8 @@ def wizcli(ctx):
 
 @wizcli.command()
 @click.pass_context
-@click.option("--user-id", prompt="User Name",
-              help="Account name of your WizNote.")
-@click.option("--password", prompt="Password", hide_input=True,
-              help="Password of you WizNote account. WARNING: To avoid"
+@click.option("--user-id", help="Account name of your WizNote.")
+@click.option("--password", help="Password of you WizNote account. WARNING: To avoid"
               " password being recorded in bash commandline history, this"
               " option should not be used in production.")
 @click.option("-s", "--server", help="Set address of your account server."
@@ -52,8 +52,19 @@ def login(ctx, user_id, password, server, auto_login, remember):
     """
     Login to WizNote server.
     """
+    gs = GlobalSetting()
     if auto_login:
-        pass
+        user_id = gs.default_user()
+        password = UserSetting(user_id).value("ACCOUNT/PASSWORD")
+        if password:
+            password = base64.b64decode(password).decode("UTF-8")
+    else:
+        # Ask for user id and password
+        if not user_id:
+            user_id = click.prompt("User Name", default=gs.default_user())
+        if not password:
+            password = click.prompt("Password", hide_input=True)
+
     require_login(server, user_id, password)
     user_info = ctx.obj["user_info"]
     # Greetings

@@ -2,6 +2,9 @@ import os
 import configparser
 import sqlite3
 from datetime import datetime
+from typing import List, Tuple
+from glob import glob
+from pathlib import Path
 
 from wizclientpy.constants import WIZNOTE_HOME
 from wizclientpy.utils.classtools import MetaSingleton
@@ -62,6 +65,25 @@ class GlobalSetting(IniSetting, metaclass=MetaSingleton):
 
     def __init__(self):
         super().__init__(os.path.join(WIZNOTE_HOME, "wiznote.ini"))
+
+    def default_user(self):
+        default_guid = self.value("Users/DefaultUserGuid")
+        default_user = None
+        for info in self.all_user():
+            if default_guid == info[1]:
+                default_user = info[0]
+        if default_user:
+            return default_user
+        else:
+            raise WizException("Can not find default user.")
+
+    def all_user(self) -> List[Tuple[str, str]]:
+        """Return all local users' id and corresponding GUID."""
+        all_path = glob(os.path.join(WIZNOTE_HOME, "*", "data", "index.db"))
+        all_setting = list(map(
+            lambda path: DatabaseSetting(path), all_path))
+        return [(s.value("ACCOUNT/USERID"), s.value("ACCOUNT/GUID"))
+                for s in all_setting]
 
 
 class DatabaseSetting(BaseKeySetting):
