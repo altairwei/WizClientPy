@@ -29,6 +29,7 @@ class DatabaseSettingTestCase(unittest.TestCase):
                 ('ACCOUNT', 'USERLEVEL', '1', '2020-08-22 20:45:55'),
                 ('ACCOUNT', 'KBSERVER', 'api.wiz.cn', '2020-08-22 20:45:55'),
                 ('ACCOUNT', 'USERID', 'test_api@wiz.cn', '2020-08-22 20:45:55'),
+                ('ACCOUNT', 'PASSWORD', None, '2020-08-22 20:45:55'),
                 ('QT_WIZNOTE', 'AUTOLOGIN', '0', '2020-08-22 20:45:55'),
                 ('TABLESTRUCTURE', 'VERSION', '5', '2020-08-22 20:45:55')
             ]
@@ -65,6 +66,9 @@ class DatabaseSettingTestCase(unittest.TestCase):
         self.assertEqual(setting.value("SYNC_INFO/DELETED_GUID"), "15")
         setting.set_value("GROUPS/COUNT", "2")
         self.assertEqual(setting.value("GROUPS/COUNT"), "2")
+        # Null value
+        setting.set_value("ACCOUNT/PASSWORD", "helloworld")
+        self.assertEqual(setting.value("ACCOUNT/PASSWORD"), "helloworld")
 
 
 __test_index_db = os.path.join(

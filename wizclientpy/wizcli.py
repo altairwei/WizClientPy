@@ -67,6 +67,11 @@ def login(ctx, user_id, password, server, auto_login, remember):
 
     require_login(server, user_id, password)
     user_info = ctx.obj["user_info"]
+    if remember:
+        gs.set_value("Users/DefaultUserGuid", user_info.user_guid)
+        UserSetting(user_id).set_value(
+            "ACCOUNT/PASSWORD",
+            base64.b64encode(password.encode("UTF-8")).decode("UTF-8"))
     # Greetings
     click.echo(success("Hello '{name}'".format(
         name=user_info.display_name)))

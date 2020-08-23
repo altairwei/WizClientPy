@@ -10,6 +10,8 @@ class UserInfo:
         self.fromJson(info_json)
 
     def fromJson(self, info_json):
+        self.user_guid = info_json["userGuid"]
+
         self.token = info_json["token"]
         self.kb_guid = info_json["kbGuid"]
         self.kb_server = info_json["kbServer"]

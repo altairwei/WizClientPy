@@ -54,6 +54,7 @@ class IniSetting(BaseKeySetting):
                 configparser.NoOptionError, KeyError):
             self.__config[key_parts[0]] = {}
             self.__config[key_parts[0]][key_parts[1]] = value
+        self.sync()
 
     def sync(self):
         """Writes any unsaved changes to ini file."""
@@ -113,13 +114,24 @@ class DatabaseSetting(BaseKeySetting):
         key_parts = self.split_key(key)
         meta_name = key_parts[0].upper()
         meta_key = key_parts[1].upper()
-        old_value = self.value(key)
+        exist = False
+        old_value = None
+        with sqlite3.connect(self.__db_file) as index_db:
+            cursor = index_db.cursor()
+            sql_cmd = "select count(*), META_VALUE from WIZ_META"
+            sql_cmd += " where META_NAME='%s'" % meta_name
+            sql_cmd += " and META_KEY='%s'" % meta_key
+            cursor.execute(sql_cmd)
+            row = cursor.fetchone()
+            if row[0] != 0:
+                exist = True
+                old_value = row[1]
         if old_value == value:
             return
         # FIXME: move sql to WizDatabase
         with sqlite3.connect(self.__db_file) as index_db:
             cursor = index_db.cursor()
-            if old_value:
+            if exist:
                 # update
                 sql_cmd = """
                 update WIZ_META set META_VALUE='{value}', DT_MODIFIED='{time}'
