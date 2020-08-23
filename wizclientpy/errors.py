@@ -69,38 +69,30 @@ class ServerXmlRpcError(WizException):
 
 
 class InvalidUser(ServerXmlRpcError):
-    """
-    User not exists!
-    """
-    pass
+    def __init__(self, msg="User not exists!"):
+        super().__init__(msg)
 
 
 class InvalidPassword(ServerXmlRpcError):
-    """
-    Password error!
-    """
-    pass
+    def __init__(self, msg="Password error!"):
+        super().__init__(msg)
 
 
 class InvalidToken(ServerXmlRpcError):
-    """
-    User name or password is not correct!
-    """
-    pass
+    def __init__(self, msg="User name or password is not correct!"):
+        super().__init__(msg)
 
 
 class TooManyLogins(ServerXmlRpcError):
-    """
-    Log in too many times in a short time, please try again later.
-    """
-    pass
+    def __init__(self, msg="Log in too many times in a short time,"
+                 "please try again later."):
+        super().__init__(msg)
 
 
 class PrivateError(Exception):
-    """
-    This exception is raised when someone try to access private attributes.
-    """
-    pass
+    def __init__(self, msg="This exception is raised when someone try to"
+                 "access private attributes."):
+        super().__init__(msg)
 
 
 EXCEPTION_CODE_MAPPING = {
