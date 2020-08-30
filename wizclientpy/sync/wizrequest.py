@@ -9,7 +9,8 @@ from wizclientpy.errors import *
 
 def exec_request(
         method: str, url: str, body: Dict[str, Any] = None,
-        params: Dict[str, Any] = None, token: str = None):
+        params: Dict[str, Any] = None, token: str = None,
+        key: str = "result"):
     """Wrap response for wiznote server request."""
     headers = {'user-agent': 'wizcli/%s' % __version__}
     if token:
@@ -29,7 +30,10 @@ def exec_request(
             except KeyError:
                 raise ServerXmlRpcError(
                     "Unknown server error: %s" % json.dumps(res_json))
-        result = res_json["result"] if "result" in res_json else res_json
+        if key and key in res_json:
+            result = res_json[key]
+        else:
+            result = res_json
     except ValueError:
         result = response.text
 

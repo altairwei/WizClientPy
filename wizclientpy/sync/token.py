@@ -1,5 +1,4 @@
 import time
-from threading import Timer, Thread
 
 from wizclientpy.sync.api import ServerApi
 from wizclientpy.sync.wizrequest import exec_request
@@ -10,11 +9,12 @@ from wizclientpy.errors import (
 from wizclientpy.utils.classtools import MetaSingleton
 from wizclientpy.constants import TOKEN_TIMEOUT_INTERVAL
 from wizclientpy.utils.urltools import buildCommandUrl
+from wizclientpy.utils.threadtools import IntervalTimer
 
 
 class WizToken(ServerApi):
     """This class is used to manage the lifecycle of access token."""
-    __timer: Timer
+    __timer: IntervalTimer
     __user_id: str
     __passwd: str
     __token: str
@@ -23,7 +23,8 @@ class WizToken(ServerApi):
         super().__init__(server)
         self.__user_id = userId
         self.__passwd = password
-        self.__timer = Timer(TOKEN_TIMEOUT_INTERVAL, self.keep_alive)
+        self.__timer = IntervalTimer(
+            TOKEN_TIMEOUT_INTERVAL, self.keep_alive)
 
     def set_identity(self, userId, password):
         self.__user_id = userId
@@ -40,8 +41,6 @@ class WizToken(ServerApi):
 
     def login(self) -> UserInfo:
         """Login to server and get an access token."""
-        # Cancel possible timer
-        self.__timer.cancel()
         result = self.__login()
         # Update token
         user = UserInfo(self.server(), result)
@@ -52,8 +51,11 @@ class WizToken(ServerApi):
 
     def logout(self):
         """Cancel the current token."""
-        url = self.build_url("/as/user/logout", self.__token)
-        exec_request("GET", url, token=self.__token)
+        try:
+            url = self.build_url("/as/user/logout", self.__token)
+            exec_request("GET", url, token=self.__token)
+        finally:
+            self.__timer.cancel()
 
     def keep_alive(self):
         """Make the current token alive."""

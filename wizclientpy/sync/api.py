@@ -151,8 +151,8 @@ class AccountsServerApi(ServerApi):
 
     def fetch_user_info(self, token: str):
         """Get user information from server by token."""
-        url = self.build_url("/as/user/keep", token)
-        result = exec_request("GET", url, token=token)
+        url = self.build_url("/as/user/info", token)
+        result = exec_request("GET", url, token=token, key=None)
         return result
 
     def user_info(self) -> UserInfo:

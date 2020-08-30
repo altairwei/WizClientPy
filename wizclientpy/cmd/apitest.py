@@ -40,6 +40,15 @@ def logout(obj):
     print_json(result)
 
 
+@as_server.command()
+@click.pass_obj
+def fetch_user_info(obj):
+    as_server = obj["as_server_api"]
+    token = obj["token"]
+    result = as_server.fetch_user_info(token.get())
+    print_json(result)
+
+
 @apitest.group(name="ks")
 @click.pass_obj
 def kb_server(obj):

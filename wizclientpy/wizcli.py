@@ -34,6 +34,17 @@ def wizcli(ctx):
         ctx.invoke(shell)
 
 
+@wizcli.resultcallback()
+def process_result(result):
+    ctx = click.get_current_context()
+    if ("in_shell" in ctx.obj and
+            ctx.obj["in_shell"] is True):
+        pass
+    else:
+        if "token" in ctx.obj:
+            ctx.obj["token"].logout()
+
+
 @wizcli.command()
 @click.pass_context
 @click.option("--user-id", help="Account name of your WizNote.")
@@ -103,7 +114,8 @@ def user(ctx, keys):
 
 
 @wizcli.command()
-def shell():
+@click.pass_context
+def shell(ctx):
     """
     Open an interactive tools, just like a shell.
     """
@@ -111,9 +123,9 @@ def shell():
         'history': FileHistory(
             str(Path(WIZNOTE_HOME).joinpath(".wizcli_history"))),
         'message': u"wizcli>>> "}
-    repl(click.get_current_context(), prompt_kwargs=prompt_kwargs)
-
-
-if __name__ == '__main__':
-    # TODO: It's important to deal with Ctrl+C interrupt when writing database.
-    wizcli(obj={})
+    ctx.obj["in_shell"] = True
+    try:
+        repl(ctx, prompt_kwargs=prompt_kwargs)
+    finally:
+        if "token" in ctx.obj:
+            ctx.obj["token"].logout()
